@@ -1,8 +1,36 @@
 system:
   check_interval_seconds: 1
+  timezone: "Europe/Warsaw"
+
+trading:
+  enabled: true
+
+  trade_start: "08:00"
+  trade_end: "20:00"
+
+  daily_profit_percent: 0.01
+  daily_loss_percent: 0.01
+
+  kill_mt5_after_limit: true
+
+telegram:
+  enabled: false
+  bot_token: ""
+  chat_id: ""
 
 mt5:
   login: 7382763
   password: "Gracia#38"
   server: "FPTradingLLC-Demo"
-  path: "C:/Program Files/MetaTrader 5/terminal64.exe"
+  path: "C:/Program Files/FP Trading MT5 Terminal/terminal64.exe"
+
+web:
+  host: "127.0.0.1"
+  port: 8000
+
+admin:
+  password: "CHANGE_ME"
+
+risk:
+  close_retry_count: 5
+  close_retry_delay_seconds: 1
