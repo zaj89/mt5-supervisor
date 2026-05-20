@@ -1,0 +1,8 @@
+system:
+  check_interval_seconds: 1
+
+mt5:
+  login: 7382763
+  password: "Gracia#38"
+  server: "FPTradingLLC-Demo"
+  path: "C:/Program Files/MetaTrader 5/terminal64.exe"

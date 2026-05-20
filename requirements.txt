@@ -1,0 +1,9 @@
+MetaTrader5
+fastapi
+uvicorn
+pyyaml
+psutil
+requests
+jinja2
+python-multipart
+websockets
