@@ -8,10 +8,11 @@ from app.system_manager import system_manager
 from app.preset_manager import (
     preset_manager
 )
-from app.mt5_manager import mt5_manager
 from app.mt5_gui_controller import (
     mt5_gui_controller
 )
+from app.trading_hours import trading_hours
+from app.mt5_manager import mt5_manager
 
 class RiskManager:
 
@@ -275,4 +276,84 @@ class RiskManager:
             return "VOLATILE"
 
         return "DANGER"
+    def can_start_session(self):
+
+        state = self.get_state()
+
+        if state["trading_blocked"]:
+
+            return (
+                False,
+                f"BLOCKED: {state['block_reason']}"
+            )
+
+        if not trading_hours.is_trading_time():
+
+            return (
+                False,
+                "Waiting For Trading Hours"
+            )
+
+        market_state = (
+            self.get_market_state()
+        )
+
+        if market_state == "DANGER":
+
+            return (
+                False,
+                "MARKET_DANGER"
+            )
+
+        spread = (
+            mt5_manager.get_current_spread()
+        )
+
+        max_spread = config.data["risk"][
+            "max_start_spread"
+        ]
+
+        if (
+            spread is not None
+            and spread > max_spread
+        ):
+
+            return (
+                False,
+                "HIGH_SPREAD"
+            )
+
+        return (
+            True,
+            "APPROVED"
+        )
+
+    def get_system_health(self):
+
+        issues = []
+
+        if not mt5_manager.is_connected():
+            issues.append("MT5")
+
+        if mt5_manager.get_atr() is None:
+            issues.append("ATR")
+
+        if mt5_manager.get_current_spread() is None:
+            issues.append("SPREAD")
+
+        if not config.data["mt5"].get(
+                "preset_path"
+        ):
+            issues.append("PRESET")
+
+        if len(issues) == 0:
+            return (
+                "HEALTHY",
+                []
+            )
+
+        return (
+            "WARNING",
+            issues
+        )
 risk_manager = RiskManager()

@@ -1,5 +1,5 @@
 system:
-  check_interval_seconds: 1
+  check_interval_seconds: 10
   timezone: "Europe/Warsaw"
 
 trading:
@@ -38,6 +38,7 @@ risk:
   max_auto_lot: 0.20
   lot_upgrade_buffer_percent: 20
   lot_downgrade_buffer_percent: 15
+  max_start_spread: 0.50
   lot_tiers:
 
     - balance: 0

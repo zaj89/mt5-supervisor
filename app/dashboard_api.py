@@ -27,7 +27,33 @@ def get_status():
         }
 
     state = risk_manager.get_state()
+    approved, reason = (
+        risk_manager.can_start_session()
+    )
+    health_status, health_issues = (
+        risk_manager.get_system_health()
+    )
+    balance = account.balance
 
+    projection_30 = round(
+        balance * (1.01 ** 30),
+        2
+    )
+
+    projection_90 = round(
+        balance * (1.01 ** 90),
+        2
+    )
+
+    projection_180 = round(
+        balance * (1.01 ** 180),
+        2
+    )
+
+    projection_365 = round(
+        balance * (1.01 ** 365),
+        2
+    )
     return {
         "balance": account.balance,
         "equity": account.equity,
@@ -43,7 +69,15 @@ def get_status():
         "trading_time": trading_hours.is_trading_time(),
         "market_state":
             risk_manager.get_market_state(),
-        "positions": mt5_manager.get_positions()
+        "positions": mt5_manager.get_positions(),
+        "session_approved": approved,
+        "session_reason": reason,
+        "health_status": health_status,
+        "health_issues": health_issues,
+        "projection_30": projection_30,
+        "projection_90": projection_90,
+        "projection_180": projection_180,
+        "projection_365": projection_365,
     }
 
 
@@ -168,8 +202,17 @@ def dashboard():
             <div class="label">Trading Hours</div>
             <div class="value" id="trading_time">-</div>
         </div>
-
+        <div class="card">
+    <div class="label">
+        System Health
     </div>
+
+    <div class="value" id="health">
+        -
+    </div>
+    </div>
+    
+</div>
 <div
     class="card"
     style="margin-top:30px;"
@@ -179,6 +222,44 @@ def dashboard():
 
     <canvas id="performanceChart"></canvas>
 
+</div>
+<div class="positions">
+
+    <h2>Wealth Projection (1% Daily)</h2>
+
+    <table>
+
+        <tr>
+            <td>30 Days</td>
+            <td id="projection_30">-</td>
+        </tr>
+
+        <tr>
+            <td>90 Days</td>
+            <td id="projection_90">-</td>
+        </tr>
+
+        <tr>
+            <td>180 Days</td>
+            <td id="projection_180">-</td>
+        </tr>
+
+        <tr>
+            <td>365 Days</td>
+            <td id="projection_365">-</td>
+        </tr>
+
+    </table>
+
+</div>
+<div class="card">
+    <div class="label">
+        Session Status
+    </div>
+
+    <div class="value" id="session_status">
+        -
+    </div>
 </div>
     <div class="positions">
 
@@ -221,7 +302,29 @@ def dashboard():
     document.getElementById(
         'market_state'
     );
+    document.getElementById(
+    'projection_30'
+).innerText =
+    data.projection_30.toFixed(2);
 
+document.getElementById(
+    'projection_90'
+).innerText =
+    data.projection_90.toFixed(2);
+
+document.getElementById(
+    'projection_180'
+).innerText =
+    data.projection_180.toFixed(2);
+
+document.getElementById(
+    'projection_365'
+).innerText =
+    data.projection_365.toFixed(2);
+        document.getElementById(
+    'session_status'
+).innerText =
+    data.session_reason;
 marketState.className = 'value';
 
 if (data.market_state === 'CALM')
@@ -260,7 +363,19 @@ else
 
         document.getElementById('trading_time').innerText =
             data.trading_time ? 'OPEN' : 'CLOSED';
-
+        document.getElementById(
+    'health'
+).innerText =
+    data.health_status;
+    document.getElementById(
+    'health'
+).className =
+    'value ' +
+    (
+        data.health_status === 'HEALTHY'
+        ? 'green'
+        : 'orange'
+    );
         document.getElementById('trading_time').className =
             'value ' + (data.trading_time ? 'green' : 'orange');
 
@@ -366,7 +481,7 @@ loadPerformanceChart();
 
 setInterval(loadPerformanceChart, 60000);
 
-    setInterval(updateDashboard, 1000);
+    setInterval(updateDashboard, 10000);
 
     </script>
 
@@ -380,3 +495,13 @@ setInterval(loadPerformanceChart, 60000);
 @app.get("/api/performance")
 def get_performance():
     return performance_tracker.get_performance_data()
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(
+        app,
+        host="127.0.0.1",
+        port=8000
+    )
