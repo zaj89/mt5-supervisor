@@ -23,7 +23,7 @@ mt5:
   password: "Gracia#38"
   server: "FPTradingLLC-Demo"
   path: "C:/Program Files/FP Trading MT5 Terminal/terminal64.exe"
-
+  preset_path: "C:/Users/zajac/PycharmProjects/mt5_supervisor/grok.set"
 web:
   host: "127.0.0.1"
   port: 8000
@@ -34,3 +34,26 @@ admin:
 risk:
   close_retry_count: 5
   close_retry_delay_seconds: 1
+  enable_auto_lot_update: true
+  max_auto_lot: 0.20
+  lot_upgrade_buffer_percent: 20
+  lot_downgrade_buffer_percent: 15
+  lot_tiers:
+
+    - balance: 0
+      lot: 0.01
+
+    - balance: 3000
+      lot: 0.02
+
+    - balance: 6000
+      lot: 0.03
+
+    - balance: 10000
+      lot: 0.05
+
+    - balance: 20000
+      lot: 0.07
+
+    - balance: 30000
+      lot: 0.10

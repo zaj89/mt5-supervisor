@@ -5,6 +5,13 @@ from app.state_manager import state_manager
 from app.config import config
 from app.close_all import close_all_engine
 from app.system_manager import system_manager
+from app.preset_manager import (
+    preset_manager
+)
+from app.mt5_manager import mt5_manager
+from app.mt5_gui_controller import (
+    mt5_gui_controller
+)
 
 class RiskManager:
 
@@ -48,8 +55,11 @@ class RiskManager:
         today = datetime.now().strftime("%Y-%m-%d")
 
         if self.state["current_day"] != today:
-
             self.reset_day(current_equity)
+
+            return True
+
+        return False
 
     def check_limits(self, equity):
 
@@ -96,6 +106,173 @@ class RiskManager:
     def get_state(self):
 
         return self.state
+    def get_safe_recommended_lot(self):
 
+        recommended = (
+            self.get_recommended_lot()
+        )
 
+        max_auto_lot = config.data["risk"][
+            "max_auto_lot"
+        ]
+
+        return min(
+            recommended,
+            max_auto_lot
+        )
+
+    def get_current_preset_lot(self):
+
+        preset_path = config.data["mt5"][
+            "preset_path"
+        ]
+
+        current = (
+            preset_manager.get_initial_lot(
+                preset_path
+            )
+        )
+
+        if current is None:
+            return 0.01
+
+        return current
+
+    def get_recommended_lot(self):
+
+        balance = mt5_manager.get_balance()
+
+        if balance is None:
+            return 0.01
+
+        tiers = config.data["risk"][
+            "lot_tiers"
+        ]
+
+        recommended = 0.01
+
+        for tier in tiers:
+
+            if balance >= tier["balance"]:
+
+                recommended = tier["lot"]
+
+            else:
+
+                break
+
+        return round(recommended, 2)
+    def check_spread_filter(self):
+
+        spread = (
+            mt5_manager.get_current_spread()
+        )
+
+        if spread is None:
+            return
+
+        max_spread = config.data["risk"][
+            "max_spread_points"
+        ]
+
+        if spread > max_spread:
+            logger.warning(
+                f"Spread too high: "
+                f"{spread}"
+            )
+
+            self.pause_trading(
+                "high_spread"
+            )
+
+            return
+
+        self.resume_trading()
+    def get_current_preset_lot(self):
+
+        preset_path = config.data["mt5"][
+            "preset_path"
+        ]
+
+        current = (
+            preset_manager.get_initial_lot(
+                preset_path
+            )
+        )
+
+        if current is None:
+            return 0.01
+
+        return current
+    def pause_trading(
+            self,
+            reason
+    ):
+
+        if self.state[
+            "trading_paused"
+        ]:
+
+            return
+
+        logger.warning(
+            f"Trading paused: {reason}"
+        )
+
+        mt5_gui_controller.toggle_algo_trading()
+
+        self.state[
+            "trading_paused"
+        ] = True
+
+        self.state[
+            "pause_reason"
+        ] = reason
+
+        state_manager.save(
+            self.state
+        )
+    def resume_trading(self):
+
+        if not self.state[
+            "trading_paused"
+        ]:
+
+            return
+
+        logger.warning(
+            "Trading resumed"
+        )
+
+        mt5_gui_controller.toggle_algo_trading()
+
+        self.state[
+            "trading_paused"
+        ] = False
+
+        self.state[
+            "pause_reason"
+        ] = ""
+
+        state_manager.save(
+            self.state
+        )
+
+    def get_market_state(self):
+
+        atr = mt5_manager.get_atr()
+
+        if atr is None:
+            return "UNKNOWN"
+
+        if atr < 8:
+            return "CALM"
+
+        if atr < 15:
+            return "NORMAL"
+
+        if atr < 25:
+            return "VOLATILE"
+
+        return "DANGER"
 risk_manager = RiskManager()

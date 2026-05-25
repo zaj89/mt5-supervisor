@@ -32,15 +32,17 @@ def get_status():
         "balance": account.balance,
         "equity": account.equity,
         "margin_free": account.margin_free,
-
+        "spread": mt5_manager.get_current_spread(),
         "trading_blocked": state["trading_blocked"],
         "block_reason": state["block_reason"],
-
+        "atr": mt5_manager.get_atr(),
         "daily_profit_target": state["daily_profit_target"],
         "daily_loss_limit": state["daily_loss_limit"],
-
+        "trading_paused": state.get("trading_paused", False),
+        "pause_reason": state.get("pause_reason", ""),
         "trading_time": trading_hours.is_trading_time(),
-
+        "market_state":
+            risk_manager.get_market_state(),
         "positions": mt5_manager.get_positions()
     }
 
@@ -140,7 +142,23 @@ def dashboard():
             <div class="label">Equity</div>
             <div class="value" id="equity">-</div>
         </div>
+        <div class="card">
+    <div class="label">Spread</div>
+    <div class="value" id="spread">-</div>
+</div>
+<div class="card">
+    <div class="label">ATR M15</div>
+    <div class="value" id="atr">-</div>
+</div>
+<div class="card">
+    <div class="label">
+        Market State
+    </div>
 
+    <div class="value" id="market_state">
+        -
+    </div>
+</div>
         <div class="card">
             <div class="label">Trading Status</div>
             <div class="value" id="blocked">-</div>
@@ -192,17 +210,45 @@ def dashboard():
     async function updateDashboard() {
 
         const response = await fetch('/api/status');
-
+        
         const data = await response.json();
 
         if (data.error) {
             console.log(data.error);
             return;
         }
+        const marketState =
+    document.getElementById(
+        'market_state'
+    );
 
+marketState.className = 'value';
+
+if (data.market_state === 'CALM')
+    marketState.classList.add('green');
+
+else if (
+    data.market_state === 'NORMAL'
+)
+    marketState.classList.add('green');
+
+else if (
+    data.market_state === 'VOLATILE'
+)
+    marketState.classList.add('orange');
+
+else
+    marketState.classList.add('red');
+        document.getElementById('spread').innerText =
+    data.spread;
+    document.getElementById('atr').innerText =
+    data.atr;
         document.getElementById('balance').innerText =
             data.balance.toFixed(2);
-
+        document.getElementById(
+    'market_state'
+).innerText =
+    data.market_state;
         document.getElementById('equity').innerText =
             data.equity.toFixed(2);
 

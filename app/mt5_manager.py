@@ -1,5 +1,6 @@
 import MetaTrader5 as mt5
-
+import MetaTrader5 as mt5
+import pandas as pd
 from app.logger import logger
 
 
@@ -126,6 +127,55 @@ class MT5Manager:
             return False
 
         return len(positions) > 0
+    def get_positions(self):
 
+        positions = mt5.positions_get()
 
+        if positions is None:
+            return []
+
+        return positions
+
+    def get_current_spread(self):
+
+        tick = mt5.symbol_info_tick("XAUUSD")
+
+        if tick is None:
+            return None
+
+        return round(tick.ask - tick.bid, 2)
+
+    def get_atr(self, period=14):
+
+        rates = mt5.copy_rates_from_pos(
+            "XAUUSD",
+            mt5.TIMEFRAME_M15,
+            0,
+            period + 1
+        )
+
+        if rates is None:
+            return None
+
+        df = pd.DataFrame(rates)
+
+        df["prev_close"] = df["close"].shift(1)
+
+        df["tr1"] = df["high"] - df["low"]
+
+        df["tr2"] = (
+                df["high"] - df["prev_close"]
+        ).abs()
+
+        df["tr3"] = (
+                df["low"] - df["prev_close"]
+        ).abs()
+
+        df["tr"] = df[
+            ["tr1", "tr2", "tr3"]
+        ].max(axis=1)
+
+        atr = df["tr"].rolling(period).mean()
+
+        return round(float(atr.iloc[-1]), 2)
 mt5_manager = MT5Manager()

@@ -8,7 +8,9 @@ from app.trading_hours import trading_hours
 from app.system_manager import system_manager
 from app.close_all import close_all_engine
 from app.performance_tracker import performance_tracker
-
+from app.lot_update_manager import (
+    lot_update_manager
+)
 class Supervisor:
 
 
@@ -83,8 +85,12 @@ class Supervisor:
         balance = mt5_manager.get_balance()
         equity = mt5_manager.get_equity()
 
-        risk_manager.check_new_day(equity)
+        new_day = risk_manager.check_new_day(
+            equity
+        )
 
+        if new_day:
+            lot_update_manager.process_daily_lot_update()
         risk_manager.check_limits(equity)
         performance_tracker.add_daily_snapshot(
             balance,
@@ -95,11 +101,14 @@ class Supervisor:
         trading_time = trading_hours.is_trading_time()
 
         logger.info(
-            f"Balance={balance} | "
-            f"Equity={equity} | "
-            f"TradingTime={trading_time} | "
-            f"Blocked={state['trading_blocked']} | "
-            f"Reason={state['block_reason']}"
+                f"Balance={balance} | "
+                f"Equity={equity} | "
+                f"TradingTime={trading_time} | "
+                f"Blocked={state['trading_blocked']} | "
+                f"Reason={state['block_reason']} | "
+                f"MarketState={risk_manager.get_market_state()} | "
+                f"ATR={mt5_manager.get_atr()} | "
+                f"Spread={mt5_manager.get_current_spread()}"
         )
 
     def startup_cleanup(self):

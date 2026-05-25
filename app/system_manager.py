@@ -66,7 +66,17 @@ class SystemManager:
             logger.error(f"MT5 start failed: {error}")
 
             return False
+    def restart_mt5(self):
 
+        logger.warning(
+            "Restarting MT5..."
+        )
+
+        self.kill_mt5()
+
+        time.sleep(5)
+
+        self.start_mt5()
 system_manager = SystemManager()
 if __name__ == "__main__":
 
